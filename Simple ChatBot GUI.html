@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Ask a Question</title>
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+    }
+    label {
+      display: block;
+      font-weight: bold;
+      margin-bottom: 10px;
+    }
+    textarea {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      resize: none;
+    }
+    button {
+      padding: 10px;
+      background-color: #007bff;
+      color: #fff;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      margin-right: 10px;
+    }
+    button:hover {
+      background-color: #0062cc;
+    }
+    #answer {
+      margin-top: 10px;
+    }
+    #error-message {
+      color: red;
+      margin-top: 10px;
+    }
+  </style>
+</head>
+<body>
+  <p>This model has a maximum context length of 4096 tokens.</p>
+  <p>Both the question and answer are included in the 4096 tokens.</p>
+  <div>
+    <label for="prompt">What is your prompt?</label>
+    <textarea id="prompt" rows="4" cols="50"></textarea>
+  </div>
+  <br>
+  <div>
+    <button id="submit-btn">Submit</button>
+    <button id="clear-btn">Clear</button>
+  </div>
+  <br>
+  <div>
+    <label for="answer">Answer:</label>
+    <br>
+    <textarea id="answer" rows="10" cols="50" readonly></textarea>
+  </div>
+  <div id="error-message"></div>
+
+  <script>
+    $(document).ready(function() {
+      $('#submit-btn').click(function() {
+        var prompt = $('#prompt').val();
+
+        if (!prompt.trim()) {
+          alert("Please enter a prompt.");
+          return;
+        }
+
+        var requestData = {
+          messages: [
+            { role: "user", content: prompt }
+          ]
+        };
+
+        $.ajax({
+          url: "http://localhost:3000/getResponse",
+          type: "POST",
+          contentType: "application/json",
+          data: JSON.stringify(requestData),
+          success: function(response) {
+            var answer = response.choices[0].message.content;
+            $('#answer').val(answer);
+            $('#error-message').text('');
+          },
+          error: function(jqXHR, textStatus, errorThrown) {
+            var errorMsg = "Error: ";
+            if (jqXHR.responseJSON && jqXHR.responseJSON.error) {
+              errorMsg += jqXHR.responseJSON.error.message;
+            } else {
+              errorMsg += textStatus + " " + errorThrown;
+            }
+            console.error("Full error response:", jqXHR);
+            $('#error-message').text(errorMsg);
+            $('#answer').val('');
+          }
+        });
+      });
+
+      $('#clear-btn').click(function() {
+        $('#prompt').val('');
+        $('#answer').val('');
+        $('#error-message').text('');
+      });
+    });
+  </script>
+</body>
+</html>
